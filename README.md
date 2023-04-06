@@ -1,1 +1,3 @@
-#Bello!!!!\n\n This is an experiment with RayLib by `hucancode`
+# Bello!!!!
+
+This is an experiment with [raylib](https://github.com/raysan5/raylib) by `hucancode`
