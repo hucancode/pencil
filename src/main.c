@@ -28,118 +28,162 @@
     #define GLSL_VERSION            100
 #endif
 
-//------------------------------------------------------------------------------------
-// Program main entry point
-//------------------------------------------------------------------------------------
-int main(void)
-{
-    // Initialization
-    //--------------------------------------------------------------------------------------
-    const int screenWidth = 800;
-    const int screenHeight = 450;
+const int screenWidth = 800;
+const int screenHeight = 450;
+Camera camera = { 0 };
+Light lights[MAX_LIGHTS] = { 0 };
+Model model;
+Model cube;
+Shader lightShader;
+Shader normalShader;
+Shader sketchShader;
+RenderTexture2D normalRenderTarget;
+RenderTexture2D lightingRenderTarget;
 
-    SetConfigFlags(FLAG_MSAA_4X_HINT);  // Enable Multi Sampling Anti Aliasing 4x (if available)
-    InitWindow(screenWidth, screenHeight, "raylib [shaders] example - basic lighting");
-
-    // Define the camera to look into our 3d world
-    Camera camera = { 0 };
+void setupWorld() {
     camera.position = (Vector3){ 2.0f, 4.0f, 6.0f };    // Camera position
     camera.target = (Vector3){ 0.0f, 0.5f, 0.0f };      // Camera looking at point
     camera.up = (Vector3){ 0.0f, 1.0f, 0.0f };          // Camera up vector (rotation towards target)
     camera.fovy = 45.0f;                                // Camera field-of-view Y
     camera.projection = CAMERA_PERSPECTIVE;             // Camera projection type
+    model = LoadModelFromMesh(GenMeshPlane(10.0f, 10.0f, 3, 3));
+    cube = LoadModelFromMesh(GenMeshCube(2.0f, 4.0f, 2.0f));
+}
 
-    // Load plane model from a generated mesh
-    Model model = LoadModelFromMesh(GenMeshPlane(10.0f, 10.0f, 3, 3));
-    Model cube = LoadModelFromMesh(GenMeshCube(2.0f, 4.0f, 2.0f));
-    
-    // Load basic lighting shader
-    Shader shader = LoadShader(TextFormat("resources/shaders/glsl%i/lighting.vs", GLSL_VERSION),
+void setupLightPass() {
+    lightingRenderTarget = LoadRenderTexture(screenWidth, screenHeight);
+    lightShader = LoadShader(TextFormat("resources/shaders/glsl%i/lighting.vs", GLSL_VERSION),
                                TextFormat("resources/shaders/glsl%i/lighting.fs", GLSL_VERSION));
-    // Get some required shader locations
-    shader.locs[SHADER_LOC_VECTOR_VIEW] = GetShaderLocation(shader, "viewPos");
+    lightShader.locs[SHADER_LOC_VECTOR_VIEW] = GetShaderLocation(lightShader, "viewPos");
     // NOTE: "matModel" location name is automatically assigned on shader loading, 
     // no need to get the location again if using that uniform name
     //shader.locs[SHADER_LOC_MATRIX_MODEL] = GetShaderLocation(shader, "matModel");
-    
-    // Ambient light level (some basic lighting)
-    int ambientLoc = GetShaderLocation(shader, "ambient");
-    SetShaderValue(shader, ambientLoc, (float[4]){ 0.1f, 0.1f, 0.1f, 1.0f }, SHADER_UNIFORM_VEC4);
+    SetShaderValue(lightShader, 
+                   GetShaderLocation(lightShader, "ambient"), 
+                   (float[4]){ 0.1f, 0.1f, 0.1f, 1.0f }, 
+                   SHADER_UNIFORM_VEC4);
+    lights[0] = CreateLight(LIGHT_POINT, (Vector3){ -2, 1, -2 }, Vector3Zero(), YELLOW, lightShader);
+    lights[1] = CreateLight(LIGHT_POINT, (Vector3){ 2, 1, 2 }, Vector3Zero(), RED, lightShader);
+    lights[2] = CreateLight(LIGHT_POINT, (Vector3){ -2, 1, 2 }, Vector3Zero(), GREEN, lightShader);
+    lights[3] = CreateLight(LIGHT_POINT, (Vector3){ 2, 1, -2 }, Vector3Zero(), BLUE, lightShader);
+}
 
-    // Assign out lighting shader to model
-    model.materials[0].shader = shader;
-    cube.materials[0].shader = shader;
+void setupNormalPass() {
+    normalRenderTarget = LoadRenderTexture(screenWidth, screenHeight);
+    normalShader = LoadShader(TextFormat("resources/shaders/glsl%i/normal.vs", GLSL_VERSION),
+                               TextFormat("resources/shaders/glsl%i/normal.fs", GLSL_VERSION));
+    normalShader.locs[SHADER_LOC_VECTOR_VIEW] = GetShaderLocation(normalShader, "viewPos");
+}
 
-    // Create lights
-    Light lights[MAX_LIGHTS] = { 0 };
-    lights[0] = CreateLight(LIGHT_POINT, (Vector3){ -2, 1, -2 }, Vector3Zero(), YELLOW, shader);
-    lights[1] = CreateLight(LIGHT_POINT, (Vector3){ 2, 1, 2 }, Vector3Zero(), RED, shader);
-    lights[2] = CreateLight(LIGHT_POINT, (Vector3){ -2, 1, 2 }, Vector3Zero(), GREEN, shader);
-    lights[3] = CreateLight(LIGHT_POINT, (Vector3){ 2, 1, -2 }, Vector3Zero(), BLUE, shader);
+void setupSketchPass() {
+  sketchShader = LoadShader(0, TextFormat("resources/shaders/glsl%i/sketch.fs", GLSL_VERSION));
+  sketchShader.locs[SHADER_LOC_MAP_DIFFUSE] = GetShaderLocation(sketchShader, "lighting");
+  sketchShader.locs[SHADER_LOC_MAP_NORMAL] = GetShaderLocation(sketchShader, "normal");
+}
 
-    SetTargetFPS(60);                   // Set our game to run at 60 frames-per-second
-    //--------------------------------------------------------------------------------------
 
-    // Main game loop
-    while (!WindowShouldClose())        // Detect window close button or ESC key
+void drawNormal() {
+    float cameraPos[3] = { camera.position.x, camera.position.y, camera.position.z };
+    SetShaderValue(normalShader, normalShader.locs[SHADER_LOC_VECTOR_VIEW], cameraPos, SHADER_UNIFORM_VEC3);
+    model.materials[0].shader = normalShader;
+    cube.materials[0].shader = normalShader;
+    ClearBackground(RAYWHITE);
+    BeginMode3D(camera);
+        DrawModel(model, Vector3Zero(), 1.0f, WHITE);
+        DrawModel(cube, Vector3Zero(), 1.0f, WHITE);
+        for (int i = 0; i < MAX_LIGHTS; i++)
+        {
+            if (lights[i].enabled) DrawSphereEx(lights[i].position, 0.2f, 8, 8, lights[i].color);
+            else DrawSphereWires(lights[i].position, 0.2f, 8, 8, ColorAlpha(lights[i].color, 0.3f));
+        }
+    EndMode3D();
+}
+
+void drawMainLight() {
+    float cameraPos[3] = { camera.position.x, camera.position.y, camera.position.z };
+    SetShaderValue(lightShader, lightShader.locs[SHADER_LOC_VECTOR_VIEW], cameraPos, SHADER_UNIFORM_VEC3);
+    for (int i = 0; i < MAX_LIGHTS; i++) UpdateLightValues(lightShader, lights[i]);
+    model.materials[0].shader = lightShader;
+    cube.materials[0].shader = lightShader;
+    ClearBackground(RAYWHITE);
+    BeginMode3D(camera);
+        DrawModel(model, Vector3Zero(), 1.0f, WHITE);
+        DrawModel(cube, Vector3Zero(), 1.0f, WHITE);
+        for (int i = 0; i < MAX_LIGHTS; i++)
+        {
+            if (lights[i].enabled) DrawSphereEx(lights[i].position, 0.2f, 8, 8, lights[i].color);
+            else DrawSphereWires(lights[i].position, 0.2f, 8, 8, ColorAlpha(lights[i].color, 0.3f));
+        }
+        DrawGrid(10, 1.0f);
+    EndMode3D();
+}
+
+void drawSketch() {
+  ClearBackground(RAYWHITE);
+  BeginShaderMode(sketchShader);
+    SetShaderValueTexture(sketchShader, sketchShader.locs[SHADER_LOC_MAP_NORMAL], normalRenderTarget.texture);
+    /* SetShaderValueTexture(sketchShader, sketchShader.locs[SHADER_LOC_MAP_DIFFUSE], lightingRenderTarget.texture); */
+    Rectangle r = { 0, 0, (float)lightingRenderTarget.texture.width, (float)-lightingRenderTarget.texture.height };
+    Vector2 p = { 0, 0 };
+    DrawTextureRec(lightingRenderTarget.texture, r, p, WHITE);
+  EndShaderMode();
+}
+
+void setup() {
+    SetConfigFlags(FLAG_MSAA_4X_HINT);
+    InitWindow(screenWidth, screenHeight, "raylib [shaders] example - basic lighting");
+    SetTargetFPS(60);
+    setupWorld();
+    setupLightPass();
+    setupNormalPass();
+    setupSketchPass();
+}
+
+void draw() {
+    BeginTextureMode(normalRenderTarget);
+      drawNormal();
+    EndTextureMode();
+    BeginTextureMode(lightingRenderTarget);
+      drawMainLight();
+    EndTextureMode();
+    BeginDrawing();
+        ClearBackground(RAYWHITE);
+        drawSketch();
+      /* drawMainLight(); */
+        DrawFPS(10, 10);
+        DrawText("Use keys [Y][R][G][B] to toggle lights", 10, 40, 20, DARKGRAY);
+    EndDrawing();
+}
+
+void update() {
+    UpdateCamera(&camera, CAMERA_ORBITAL);
+    if (IsKeyPressed(KEY_Y)) { lights[0].enabled = !lights[0].enabled; }
+    if (IsKeyPressed(KEY_R)) { lights[1].enabled = !lights[1].enabled; }
+    if (IsKeyPressed(KEY_G)) { lights[2].enabled = !lights[2].enabled; }
+    if (IsKeyPressed(KEY_B)) { lights[3].enabled = !lights[3].enabled; }
+}
+
+void dispose() {
+    UnloadModel(model);
+    UnloadModel(cube);
+    UnloadShader(lightShader);
+    UnloadShader(normalShader);
+    UnloadShader(sketchShader);
+}
+
+//------------------------------------------------------------------------------------
+// Program main entry point
+//------------------------------------------------------------------------------------
+int main(void)
+{
+    setup();   
+    while(!WindowShouldClose())
     {
-        // Update
-        //----------------------------------------------------------------------------------
-        UpdateCamera(&camera, CAMERA_ORBITAL);
-
-        // Update the shader with the camera view vector (points towards { 0.0f, 0.0f, 0.0f })
-        float cameraPos[3] = { camera.position.x, camera.position.y, camera.position.z };
-        SetShaderValue(shader, shader.locs[SHADER_LOC_VECTOR_VIEW], cameraPos, SHADER_UNIFORM_VEC3);
-        
-        // Check key inputs to enable/disable lights
-        if (IsKeyPressed(KEY_Y)) { lights[0].enabled = !lights[0].enabled; }
-        if (IsKeyPressed(KEY_R)) { lights[1].enabled = !lights[1].enabled; }
-        if (IsKeyPressed(KEY_G)) { lights[2].enabled = !lights[2].enabled; }
-        if (IsKeyPressed(KEY_B)) { lights[3].enabled = !lights[3].enabled; }
-        
-        // Update light values (actually, only enable/disable them)
-        for (int i = 0; i < MAX_LIGHTS; i++) UpdateLightValues(shader, lights[i]);
-        //----------------------------------------------------------------------------------
-
-        // Draw
-        //----------------------------------------------------------------------------------
-        BeginDrawing();
-
-            ClearBackground(RAYWHITE);
-
-            BeginMode3D(camera);
-
-                DrawModel(model, Vector3Zero(), 1.0f, WHITE);
-                DrawModel(cube, Vector3Zero(), 1.0f, WHITE);
-
-                // Draw spheres to show where the lights are
-                for (int i = 0; i < MAX_LIGHTS; i++)
-                {
-                    if (lights[i].enabled) DrawSphereEx(lights[i].position, 0.2f, 8, 8, lights[i].color);
-                    else DrawSphereWires(lights[i].position, 0.2f, 8, 8, ColorAlpha(lights[i].color, 0.3f));
-                }
-
-                DrawGrid(10, 1.0f);
-
-            EndMode3D();
-
-            DrawFPS(10, 10);
-
-            DrawText("Use keys [Y][R][G][B] to toggle lights", 10, 40, 20, DARKGRAY);
-
-        EndDrawing();
-        //----------------------------------------------------------------------------------
+        update();
+        draw();
     }
-
-    // De-Initialization
-    //--------------------------------------------------------------------------------------
-    UnloadModel(model);     // Unload the model
-    UnloadModel(cube);      // Unload the model
-    UnloadShader(shader);   // Unload shader
-
-    CloseWindow();          // Close window and OpenGL context
-    //--------------------------------------------------------------------------------------
-
+    dispose();
+    CloseWindow();
     return 0;
 }
 
