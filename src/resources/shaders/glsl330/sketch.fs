@@ -1,5 +1,6 @@
 #version 330
 
+#define EPSILON 1.0
 // Input vertex attributes (from vertex shader)
 in vec2 fragTexCoord;
 
@@ -49,19 +50,19 @@ vec3 hatch() {
     float lum = length(color)/sqrt(3.0);
     float ret = 1.0;
     if (lum < lumThreshold01) {
-        if (mod(gl_FragCoord.x + gl_FragCoord.y, 10.0) == 0.0) ret = 0.0;
+        if (mod(gl_FragCoord.x + gl_FragCoord.y, 10.0) < EPSILON) ret = 0.0;
     }
 
     if (lum < lumThreshold02) {
-        if (mod(gl_FragCoord.x - gl_FragCoord.y, 10.0) == 0.0) ret = 0.0;
+        if (mod(gl_FragCoord.x - gl_FragCoord.y, 10.0) < EPSILON) ret = 0.0;
     }
 
     if (lum < lumThreshold03) {
-        if (mod(gl_FragCoord.x + gl_FragCoord.y - hatchOffsetY, 10.0) == 0.0) ret = 0.0;
+        if (mod(gl_FragCoord.x + gl_FragCoord.y - hatchOffsetY, 10.0) < EPSILON) ret = 0.0;
     }
 
     if (lum < lumThreshold04) {
-        if (mod(gl_FragCoord.x - gl_FragCoord.y - hatchOffsetY, 10.0) == 0.0) ret = 0.0;
+        if (mod(gl_FragCoord.x - gl_FragCoord.y - hatchOffsetY, 10.0) < EPSILON) ret = 0.0;
     }
     return vec3(ret);
 }
