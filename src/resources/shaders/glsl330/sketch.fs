@@ -11,7 +11,7 @@ uniform sampler2D normal;
 out vec4 finalColor;
 
 // NOTE: Add here your custom variables
-uniform vec2 resolution = vec2(800, 450);
+uniform vec2 resolution;
 
 float hatchOffsetY = 5.0;
 float lumThreshold01 = 0.9;

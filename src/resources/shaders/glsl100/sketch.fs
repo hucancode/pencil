@@ -10,7 +10,7 @@ uniform sampler2D lighting;
 uniform sampler2D normal;
 
 // NOTE: Add here your custom variables
-uniform vec2 resolution = vec2(800.0, 450.0);
+uniform vec2 resolution;
 
 float hatchOffsetY = 5.0;
 float lumThreshold01 = 0.9;

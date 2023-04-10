@@ -33,8 +33,8 @@
 #define GLSL_VERSION 100
 #endif
 
-const int screenWidth = 800;
-const int screenHeight = 450;
+const int screenWidth = 1024;
+const int screenHeight = 768;
 Camera camera = {0};
 Light lights[MAX_LIGHTS] = {0};
 Model model;
@@ -95,6 +95,8 @@ void setupSketchPass() {
       GetShaderLocation(sketchShader, "lighting");
   sketchShader.locs[SHADER_LOC_MAP_NORMAL] =
       GetShaderLocation(sketchShader, "normal");
+  SetShaderValue(sketchShader, GetShaderLocation(sketchShader, "resolution"),
+      (float[2]){screenWidth, screenHeight}, SHADER_UNIFORM_VEC2);
 }
 
 void drawNormal() {
