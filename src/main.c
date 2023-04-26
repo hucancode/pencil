@@ -99,36 +99,7 @@ void setupSketchPass() {
       (float[2]){screenWidth, screenHeight}, SHADER_UNIFORM_VEC2);
 }
 
-void drawNormal() {
-  float cameraPos[3] = {
-      camera.position.x, camera.position.y, camera.position.z};
-  SetShaderValue(normalShader, normalShader.locs[SHADER_LOC_VECTOR_VIEW],
-      cameraPos, SHADER_UNIFORM_VEC3);
-  model.materials[0].shader = normalShader;
-  cube.materials[0].shader = normalShader;
-  ClearBackground(RAYWHITE);
-  BeginMode3D(camera);
-  DrawModel(model, Vector3Zero(), 1.0f, WHITE);
-  DrawModel(cube, Vector3Zero(), 1.0f, WHITE);
-  for (int i = 0; i < MAX_LIGHTS; i++) {
-    if (lights[i].enabled)
-      DrawSphereEx(lights[i].position, 0.2f, 8, 8, lights[i].color);
-    else
-      DrawSphereWires(
-          lights[i].position, 0.2f, 8, 8, ColorAlpha(lights[i].color, 0.3f));
-  }
-  EndMode3D();
-}
-
-void drawMainLight() {
-  float cameraPos[3] = {
-      camera.position.x, camera.position.y, camera.position.z};
-  SetShaderValue(lightShader, lightShader.locs[SHADER_LOC_VECTOR_VIEW],
-      cameraPos, SHADER_UNIFORM_VEC3);
-  for (int i = 0; i < MAX_LIGHTS; i++)
-    UpdateLightValues(lightShader, lights[i]);
-  model.materials[0].shader = lightShader;
-  cube.materials[0].shader = lightShader;
+void drawScene() {
   ClearBackground(RAYWHITE);
   BeginMode3D(camera);
   DrawModel(model, Vector3Zero(), 1.0f, WHITE);
@@ -142,6 +113,24 @@ void drawMainLight() {
   }
   DrawGrid(10, 1.0f);
   EndMode3D();
+}
+
+void drawNormal() {
+  SetShaderValue(normalShader, normalShader.locs[SHADER_LOC_VECTOR_VIEW],
+      &camera.position, SHADER_UNIFORM_VEC3);
+  model.materials[0].shader = normalShader;
+  cube.materials[0].shader = normalShader;
+  drawScene();
+}
+
+void drawMainLight() {
+  SetShaderValue(lightShader, lightShader.locs[SHADER_LOC_VECTOR_VIEW],
+      &camera.position, SHADER_UNIFORM_VEC3);
+  for (int i = 0; i < MAX_LIGHTS; i++)
+    UpdateLightValues(lightShader, lights[i]);
+  model.materials[0].shader = lightShader;
+  cube.materials[0].shader = lightShader;
+  drawScene();
 }
 
 void drawSketch() {
