@@ -1,1 +1,6 @@
 build
+CMakeFiles
+Makefile
+CMakeCache.txt
+*.cmake
+game/pencil
