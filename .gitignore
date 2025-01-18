@@ -1,6 +1,2 @@
-build
-CMakeFiles
-Makefile
-CMakeCache.txt
-*.cmake
-game/pencil
+.zig-cache/
+zig-out/
