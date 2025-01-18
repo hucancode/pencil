@@ -51,7 +51,7 @@ fn setupLightPass() void {
 
     lightShader.locs[raylib.SHADER_LOC_VECTOR_VIEW] = raylib.GetShaderLocation(lightShader, "viewPos");
 
-    const ambient: [4]f32 = .{0.1, 0.1, 0.1, 1.0};
+    const ambient: [4]f32 = .{ 0.1, 0.1, 0.1, 1.0 };
     raylib.SetShaderValue(lightShader, raylib.GetShaderLocation(lightShader, "ambient"), &ambient, raylib.SHADER_UNIFORM_VEC4);
 
     lights[0] = light.createLight(light.LightType.Point, vec3(-2, 1, -2), VEC3_ZERO, raylib.YELLOW, &lightShader);
@@ -79,7 +79,7 @@ fn setupSketchPass() void {
     );
     sketchShader.locs[raylib.SHADER_LOC_MAP_DIFFUSE] = raylib.GetShaderLocation(sketchShader, "lighting");
     sketchShader.locs[raylib.SHADER_LOC_MAP_NORMAL] = raylib.GetShaderLocation(sketchShader, "normal");
-    const resolution: [2]f32 = .{screenWidth, screenHeight};
+    const resolution: [2]f32 = .{ screenWidth, screenHeight };
     raylib.SetShaderValue(sketchShader, raylib.GetShaderLocation(sketchShader, "resolution"), &resolution, raylib.SHADER_UNIFORM_VEC2);
 }
 

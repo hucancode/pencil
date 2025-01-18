@@ -59,25 +59,30 @@ pub fn createLight(
 
     const lightIndex = lightsCount;
     lightsCount += 1;
-    var location = std.fmt.allocPrint(std.heap.page_allocator, "{s}[{d}]", .{"lights", lightIndex}) catch unreachable;
+    var location = std.fmt.allocPrint(std.heap.page_allocator, "{s}[{d}].enabled", .{ "lights", lightIndex }) catch unreachable;
     light.enabledLoc = raylib.GetShaderLocation(
-        shader.*, location.ptr,
+        shader.*,
+        location.ptr,
     );
-    location = std.fmt.allocPrint(std.heap.page_allocator, "{s}[{d}].type", .{"lights", lightIndex}) catch unreachable;
+    location = std.fmt.allocPrint(std.heap.page_allocator, "{s}[{d}].type", .{ "lights", lightIndex }) catch unreachable;
     light.typeLoc = raylib.GetShaderLocation(
-        shader.*, location.ptr,
+        shader.*,
+        location.ptr,
     );
-    location = std.fmt.allocPrint(std.heap.page_allocator, "{s}[{d}].position", .{"lights", lightIndex}) catch unreachable;
+    location = std.fmt.allocPrint(std.heap.page_allocator, "{s}[{d}].position", .{ "lights", lightIndex }) catch unreachable;
     light.positionLoc = raylib.GetShaderLocation(
-        shader.*, location.ptr,
+        shader.*,
+        location.ptr,
     );
-    location = std.fmt.allocPrint(std.heap.page_allocator, "{s}[{d}].target", .{"lights", lightIndex}) catch unreachable;
+    location = std.fmt.allocPrint(std.heap.page_allocator, "{s}[{d}].target", .{ "lights", lightIndex }) catch unreachable;
     light.targetLoc = raylib.GetShaderLocation(
-        shader.*, location.ptr,
+        shader.*,
+        location.ptr,
     );
-    location = std.fmt.allocPrint(std.heap.page_allocator, "{s}[{d}].color", .{"lights", lightIndex}) catch unreachable;
+    location = std.fmt.allocPrint(std.heap.page_allocator, "{s}[{d}].color", .{ "lights", lightIndex }) catch unreachable;
     light.colorLoc = raylib.GetShaderLocation(
-        shader.*, location.ptr,
+        shader.*,
+        location.ptr,
     );
 
     updateLightValues(shader, &light);
@@ -86,7 +91,7 @@ pub fn createLight(
 
 // Send light properties to the shader
 pub fn updateLightValues(shader: *Shader, light: *Light) void {
-    raylib.SetShaderValue(shader.*, light.enabledLoc, &light.enabled, raylib.SHADER_UNIFORM_INT);
+    raylib.SetShaderValue(shader.*, light.enabledLoc, &@as(i32, @intFromBool(light.enabled)), raylib.SHADER_UNIFORM_INT);
     raylib.SetShaderValue(shader.*, light.typeLoc, &light.type, raylib.SHADER_UNIFORM_INT);
 
     const position = [3]f32{
