@@ -51,7 +51,9 @@ fn setupWorld() void {
 fn setupLightPass() !void {
     lightingRenderTarget = rl.LoadRenderTexture(SCREEN_WIDTH, SCREEN_HEIGHT);
     const vsPath = try std.fmt.allocPrint(allocator, "resources/shaders/glsl{d}/lighting.vs", .{GLSL_VERSION});
+    defer allocator.free(vsPath);
     const fsPath = try std.fmt.allocPrint(allocator, "resources/shaders/glsl{d}/lighting.fs", .{GLSL_VERSION});
+    defer allocator.free(fsPath);
     lightShader = rl.LoadShader(vsPath.ptr, fsPath.ptr);
 
     lightShader.locs[rl.SHADER_LOC_VECTOR_VIEW] = rl.GetShaderLocation(lightShader, "viewPos");
@@ -68,7 +70,9 @@ fn setupLightPass() !void {
 fn setupNormalPass() !void {
     normalRenderTarget = rl.LoadRenderTexture(SCREEN_WIDTH, SCREEN_HEIGHT);
     const vsPath = try std.fmt.allocPrint(allocator, "resources/shaders/glsl{d}/normal.vs", .{GLSL_VERSION});
+    defer allocator.free(vsPath);
     const fsPath = try std.fmt.allocPrint(allocator, "resources/shaders/glsl{d}/normal.fs", .{GLSL_VERSION});
+    defer allocator.free(fsPath);
     normalShader = rl.LoadShader(
         vsPath.ptr,
         fsPath.ptr,
@@ -78,6 +82,7 @@ fn setupNormalPass() !void {
 
 fn setupSketchPass() !void {
     const fsPath = try std.fmt.allocPrint(allocator, "resources/shaders/glsl{d}/sketch.fs", .{GLSL_VERSION});
+    defer allocator.free(fsPath);
     sketchShader = rl.LoadShader(
         null,
         fsPath.ptr,
