@@ -68,7 +68,6 @@ fn setupNormalPass() void {
         vsPath.ptr,
         fsPath.ptr,
     );
-
     normalShader.locs[raylib.SHADER_LOC_VECTOR_VIEW] = raylib.GetShaderLocation(normalShader, "viewPos");
 }
 
@@ -78,26 +77,23 @@ fn setupSketchPass() void {
         null,
         fsPath.ptr,
     );
-
     sketchShader.locs[raylib.SHADER_LOC_MAP_DIFFUSE] = raylib.GetShaderLocation(sketchShader, "lighting");
     sketchShader.locs[raylib.SHADER_LOC_MAP_NORMAL] = raylib.GetShaderLocation(sketchShader, "normal");
-
     const resolution: [2]f32 = .{screenWidth, screenHeight};
     raylib.SetShaderValue(sketchShader, raylib.GetShaderLocation(sketchShader, "resolution"), &resolution, raylib.SHADER_UNIFORM_VEC2);
 }
 
 fn drawScene() void {
     raylib.ClearBackground(raylib.RAYWHITE);
-
     raylib.BeginMode3D(camera);
     raylib.DrawModel(model, VEC3_ZERO, 1.0, raylib.WHITE);
     raylib.DrawModel(cube, VEC3_ZERO, 1.0, raylib.WHITE);
 
-    for (lights) |e| {
-        if (e.enabled) {
-            raylib.DrawSphereEx(e.position, 0.2, 8, 8, e.color);
+    for (lights) |l| {
+        if (l.enabled) {
+            raylib.DrawSphereEx(l.position, 0.2, 8, 8, l.color);
         } else {
-            raylib.DrawSphereWires(e.position, 0.2, 8, 8, raylib.ColorAlpha(e.color, 0.3));
+            raylib.DrawSphereWires(l.position, 0.2, 8, 8, raylib.ColorAlpha(l.color, 0.3));
         }
     }
 
@@ -105,7 +101,39 @@ fn drawScene() void {
     raylib.EndMode3D();
 }
 
-pub fn main() !void {
+fn drawNormal() void {
+    raylib.SetShaderValue(normalShader, normalShader.locs[raylib.SHADER_LOC_VECTOR_VIEW], &camera.position, raylib.SHADER_UNIFORM_VEC3);
+    model.materials[0].shader = normalShader;
+    cube.materials[0].shader = normalShader;
+    drawScene();
+}
+
+fn drawMainLight() void {
+    raylib.SetShaderValue(lightShader, lightShader.locs[raylib.SHADER_LOC_VECTOR_VIEW], &camera.position, raylib.SHADER_UNIFORM_VEC3);
+    for (&lights) |*l| {
+        light.updateLightValues(&lightShader, l);
+    }
+    model.materials[0].shader = lightShader;
+    cube.materials[0].shader = lightShader;
+    drawScene();
+}
+
+fn drawSketch() void {
+    raylib.ClearBackground(raylib.RAYWHITE);
+    raylib.BeginShaderMode(sketchShader);
+    raylib.SetShaderValueTexture(sketchShader, sketchShader.locs[raylib.SHADER_LOC_MAP_NORMAL], normalRenderTarget.texture);
+    const r = raylib.Rectangle{
+        .x = 0,
+        .y = 0,
+        .width = @floatFromInt(lightingRenderTarget.texture.width),
+        .height = -@as(f32, @floatFromInt(lightingRenderTarget.texture.height)),
+    };
+    const p = raylib.Vector2{ .x = 0, .y = 0 };
+    raylib.DrawTextureRec(lightingRenderTarget.texture, r, p, raylib.WHITE);
+    raylib.EndShaderMode();
+}
+
+fn setup() void {
     raylib.SetConfigFlags(raylib.FLAG_MSAA_4X_HINT);
     raylib.InitWindow(screenWidth, screenHeight, "Zig + Raylib - Sketch Shader");
     raylib.SetTargetFPS(60);
@@ -114,26 +142,48 @@ pub fn main() !void {
     setupLightPass();
     setupNormalPass();
     setupSketchPass();
+}
 
-    while (!raylib.WindowShouldClose()) {
-        raylib.UpdateCamera(&camera, raylib.CAMERA_ORBITAL);
+fn update() void {
+    raylib.UpdateCamera(&camera, raylib.CAMERA_ORBITAL);
 
-        if (raylib.IsKeyPressed(raylib.KEY_Y)) lights[0].enabled = !lights[0].enabled;
-        if (raylib.IsKeyPressed(raylib.KEY_R)) lights[1].enabled = !lights[1].enabled;
-        if (raylib.IsKeyPressed(raylib.KEY_G)) lights[2].enabled = !lights[2].enabled;
-        if (raylib.IsKeyPressed(raylib.KEY_B)) lights[3].enabled = !lights[3].enabled;
+    if (raylib.IsKeyPressed(raylib.KEY_Y)) lights[0].enabled = !lights[0].enabled;
+    if (raylib.IsKeyPressed(raylib.KEY_R)) lights[1].enabled = !lights[1].enabled;
+    if (raylib.IsKeyPressed(raylib.KEY_G)) lights[2].enabled = !lights[2].enabled;
+    if (raylib.IsKeyPressed(raylib.KEY_B)) lights[3].enabled = !lights[3].enabled;
+}
 
-        raylib.BeginDrawing();
-        drawScene();
-        raylib.DrawFPS(10, 10);
-        raylib.DrawText("Use keys [Y][R][G][B] to toggle lights", 10, 40, 20, raylib.DARKGRAY);
-        raylib.EndDrawing();
-    }
+fn draw() void {
+    std.debug.print("Drawing\n", .{});
+    raylib.BeginTextureMode(normalRenderTarget);
+    drawNormal();
+    raylib.EndTextureMode();
+    raylib.BeginTextureMode(lightingRenderTarget);
+    drawMainLight();
+    raylib.EndTextureMode();
+    raylib.BeginDrawing();
+    raylib.ClearBackground(raylib.RAYWHITE);
+    drawSketch();
+    raylib.DrawFPS(10, 10);
+    raylib.DrawText("Use keys [Y][R][G][B] to toggle lights", 10, 40, 20, raylib.DARKGRAY);
+    raylib.EndDrawing();
+    std.debug.print("Done Drawing\n", .{});
+}
 
+fn dispose() void {
     raylib.UnloadModel(model);
     raylib.UnloadModel(cube);
     raylib.UnloadShader(lightShader);
     raylib.UnloadShader(normalShader);
     raylib.UnloadShader(sketchShader);
     raylib.CloseWindow();
+}
+
+pub fn main() !void {
+    setup();
+    while (!raylib.WindowShouldClose()) {
+        update();
+        draw();
+    }
+    dispose();
 }

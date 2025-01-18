@@ -11,9 +11,9 @@ const Shader = raylib.Shader;
 pub const MAX_LIGHTS = 4;
 
 // Light types
-pub const LightType = enum {
-    Directional,
-    Point,
+pub const LightType = enum(i32) {
+    Directional = 0,
+    Point = 1,
 };
 
 // Light structure
