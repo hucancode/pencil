@@ -13,8 +13,12 @@ const GLSL_VERSION = blk: {
     }
 };
 const MAX_LIGHTS = 4;
-const screenWidth = 1024;
-const screenHeight = 768;
+const SCREEN_WIDTH = 1024;
+const SCREEN_HEIGHT = 768;
+const CAMERA_POSITION = rl.Vector3{ .x = 2.0, .y = 4.0, .z = 6.0 };
+const CAMERA_TARGET = rl.Vector3{ .x = 0.0, .y = 0.5, .z = 0.0 };
+const CAMERA_UP = rl.Vector3{ .x = 0.0, .y = 1.0, .z = 0.0 };
+const CAMERA_FOVY = 45.0;
 const allocator = std.heap.page_allocator;
 
 var camera: rl.Camera3D = undefined;
@@ -34,20 +38,20 @@ fn vec3(x: f32, y: f32, z: f32) rl.Vector3 {
 const VEC3_ZERO = rl.Vector3{ .x = 0.0, .y = 0.0, .z = 0.0 };
 
 fn setupWorld() void {
-    camera.position = vec3(2.0, 4.0, 6.0);
-    camera.target = vec3(0.0, 0.5, 0.0);
-    camera.up = vec3(0.0, 1.0, 0.0);
-    camera.fovy = 45.0;
+    camera.position = CAMERA_POSITION;
+    camera.target = CAMERA_TARGET;
+    camera.up = CAMERA_UP;
+    camera.fovy = CAMERA_FOVY;
     camera.projection = rl.CAMERA_PERSPECTIVE;
 
     model = rl.LoadModelFromMesh(rl.GenMeshPlane(10.0, 10.0, 3, 3));
     cube = rl.LoadModelFromMesh(rl.GenMeshCube(2.0, 4.0, 2.0));
 }
 
-fn setupLightPass() void {
-    lightingRenderTarget = rl.LoadRenderTexture(screenWidth, screenHeight);
-    const vsPath = std.fmt.allocPrint(allocator, "resources/shaders/glsl{d}/lighting.vs", .{GLSL_VERSION}) catch unreachable;
-    const fsPath = std.fmt.allocPrint(allocator, "resources/shaders/glsl{d}/lighting.fs", .{GLSL_VERSION}) catch unreachable;
+fn setupLightPass() !void {
+    lightingRenderTarget = rl.LoadRenderTexture(SCREEN_WIDTH, SCREEN_HEIGHT);
+    const vsPath = try std.fmt.allocPrint(allocator, "resources/shaders/glsl{d}/lighting.vs", .{GLSL_VERSION});
+    const fsPath = try std.fmt.allocPrint(allocator, "resources/shaders/glsl{d}/lighting.fs", .{GLSL_VERSION});
     lightShader = rl.LoadShader(vsPath.ptr, fsPath.ptr);
 
     lightShader.locs[rl.SHADER_LOC_VECTOR_VIEW] = rl.GetShaderLocation(lightShader, "viewPos");
@@ -61,10 +65,10 @@ fn setupLightPass() void {
     lights[3] = light.createLight(light.LightType.Point, vec3(2, 1, -2), VEC3_ZERO, rl.BLUE, &lightShader);
 }
 
-fn setupNormalPass() void {
-    normalRenderTarget = rl.LoadRenderTexture(screenWidth, screenHeight);
-    const vsPath = std.fmt.allocPrint(allocator, "resources/shaders/glsl{d}/normal.vs", .{GLSL_VERSION}) catch unreachable;
-    const fsPath = std.fmt.allocPrint(allocator, "resources/shaders/glsl{d}/normal.fs", .{GLSL_VERSION}) catch unreachable;
+fn setupNormalPass() !void {
+    normalRenderTarget = rl.LoadRenderTexture(SCREEN_WIDTH, SCREEN_HEIGHT);
+    const vsPath = try std.fmt.allocPrint(allocator, "resources/shaders/glsl{d}/normal.vs", .{GLSL_VERSION});
+    const fsPath = try std.fmt.allocPrint(allocator, "resources/shaders/glsl{d}/normal.fs", .{GLSL_VERSION});
     normalShader = rl.LoadShader(
         vsPath.ptr,
         fsPath.ptr,
@@ -72,15 +76,15 @@ fn setupNormalPass() void {
     normalShader.locs[rl.SHADER_LOC_VECTOR_VIEW] = rl.GetShaderLocation(normalShader, "viewPos");
 }
 
-fn setupSketchPass() void {
-    const fsPath = std.fmt.allocPrint(allocator, "resources/shaders/glsl{d}/sketch.fs", .{GLSL_VERSION}) catch unreachable;
+fn setupSketchPass() !void {
+    const fsPath = try std.fmt.allocPrint(allocator, "resources/shaders/glsl{d}/sketch.fs", .{GLSL_VERSION});
     sketchShader = rl.LoadShader(
         null,
         fsPath.ptr,
     );
     sketchShader.locs[rl.SHADER_LOC_MAP_DIFFUSE] = rl.GetShaderLocation(sketchShader, "lighting");
     sketchShader.locs[rl.SHADER_LOC_MAP_NORMAL] = rl.GetShaderLocation(sketchShader, "normal");
-    const resolution: [2]f32 = .{ screenWidth, screenHeight };
+    const resolution: [2]f32 = .{ SCREEN_WIDTH, SCREEN_HEIGHT };
     rl.SetShaderValue(sketchShader, rl.GetShaderLocation(sketchShader, "resolution"), &resolution, rl.SHADER_UNIFORM_VEC2);
 }
 
@@ -134,15 +138,15 @@ fn drawSketch() void {
     rl.EndShaderMode();
 }
 
-fn setup() void {
+fn setup() !void {
     rl.SetConfigFlags(rl.FLAG_MSAA_4X_HINT);
-    rl.InitWindow(screenWidth, screenHeight, "Zig + rl - Sketch Shader");
+    rl.InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Zig + rl - Sketch Shader");
     rl.SetTargetFPS(60);
 
     setupWorld();
-    setupLightPass();
-    setupNormalPass();
-    setupSketchPass();
+    try setupLightPass();
+    try setupNormalPass();
+    try setupSketchPass();
 }
 
 fn update() void {
@@ -179,7 +183,7 @@ fn dispose() void {
 }
 
 pub fn main() !void {
-    setup();
+    try setup();
     while (!rl.WindowShouldClose()) {
         update();
         draw();
