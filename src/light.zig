@@ -1,11 +1,12 @@
 const std = @import("std");
-const raylib = @cImport({
+const rl = @cImport({
     @cInclude("raylib.h");
     @cInclude("raymath.h");
 });
-const Vector3 = raylib.Vector3;
-const Color = raylib.Color;
-const Shader = raylib.Shader;
+const Vector3 = rl.Vector3;
+const Color = rl.Color;
+const Shader = rl.Shader;
+const allocator = std.heap.page_allocator;
 
 // Constants
 pub const MAX_LIGHTS = 4;
@@ -59,28 +60,28 @@ pub fn createLight(
 
     const lightIndex = lightsCount;
     lightsCount += 1;
-    var location = std.fmt.allocPrint(std.heap.page_allocator, "{s}[{d}].enabled", .{ "lights", lightIndex }) catch unreachable;
-    light.enabledLoc = raylib.GetShaderLocation(
+    var location = std.fmt.allocPrint(allocator, "{s}[{d}].{s}", .{ "lights", lightIndex, "enabled" }) catch unreachable;
+    light.enabledLoc = rl.GetShaderLocation(
         shader.*,
         location.ptr,
     );
-    location = std.fmt.allocPrint(std.heap.page_allocator, "{s}[{d}].type", .{ "lights", lightIndex }) catch unreachable;
-    light.typeLoc = raylib.GetShaderLocation(
+    location = std.fmt.allocPrint(allocator, "{s}[{d}].{s}", .{ "lights", lightIndex, "type" }) catch unreachable;
+    light.typeLoc = rl.GetShaderLocation(
         shader.*,
         location.ptr,
     );
-    location = std.fmt.allocPrint(std.heap.page_allocator, "{s}[{d}].position", .{ "lights", lightIndex }) catch unreachable;
-    light.positionLoc = raylib.GetShaderLocation(
+    location = std.fmt.allocPrint(allocator, "{s}[{d}].{s}", .{ "lights", lightIndex, "position" }) catch unreachable;
+    light.positionLoc = rl.GetShaderLocation(
         shader.*,
         location.ptr,
     );
-    location = std.fmt.allocPrint(std.heap.page_allocator, "{s}[{d}].target", .{ "lights", lightIndex }) catch unreachable;
-    light.targetLoc = raylib.GetShaderLocation(
+    location = std.fmt.allocPrint(allocator, "{s}[{d}].{s}", .{ "lights", lightIndex, "target" }) catch unreachable;
+    light.targetLoc = rl.GetShaderLocation(
         shader.*,
         location.ptr,
     );
-    location = std.fmt.allocPrint(std.heap.page_allocator, "{s}[{d}].color", .{ "lights", lightIndex }) catch unreachable;
-    light.colorLoc = raylib.GetShaderLocation(
+    location = std.fmt.allocPrint(allocator, "{s}[{d}].{s}", .{ "lights", lightIndex, "color" }) catch unreachable;
+    light.colorLoc = rl.GetShaderLocation(
         shader.*,
         location.ptr,
     );
@@ -91,22 +92,22 @@ pub fn createLight(
 
 // Send light properties to the shader
 pub fn updateLightValues(shader: *Shader, light: *Light) void {
-    raylib.SetShaderValue(shader.*, light.enabledLoc, &@as(i32, @intFromBool(light.enabled)), raylib.SHADER_UNIFORM_INT);
-    raylib.SetShaderValue(shader.*, light.typeLoc, &light.type, raylib.SHADER_UNIFORM_INT);
+    rl.SetShaderValue(shader.*, light.enabledLoc, &@as(i32, @intFromBool(light.enabled)), rl.SHADER_UNIFORM_INT);
+    rl.SetShaderValue(shader.*, light.typeLoc, &light.type, rl.SHADER_UNIFORM_INT);
 
     const position = [3]f32{
         light.position.x,
         light.position.y,
         light.position.z,
     };
-    raylib.SetShaderValue(shader.*, light.positionLoc, &position, raylib.SHADER_UNIFORM_VEC3);
+    rl.SetShaderValue(shader.*, light.positionLoc, &position, rl.SHADER_UNIFORM_VEC3);
 
     const target = [3]f32{
         light.target.x,
         light.target.y,
         light.target.z,
     };
-    raylib.SetShaderValue(shader.*, light.targetLoc, &target, raylib.SHADER_UNIFORM_VEC3);
+    rl.SetShaderValue(shader.*, light.targetLoc, &target, rl.SHADER_UNIFORM_VEC3);
 
     const color = [4]f32{
         @as(f32, @floatFromInt(light.color.r)) / 255.0,
@@ -114,5 +115,5 @@ pub fn updateLightValues(shader: *Shader, light: *Light) void {
         @as(f32, @floatFromInt(light.color.b)) / 255.0,
         @as(f32, @floatFromInt(light.color.a)) / 255.0,
     };
-    raylib.SetShaderValue(shader.*, light.colorLoc, &color, raylib.SHADER_UNIFORM_VEC4);
+    rl.SetShaderValue(shader.*, light.colorLoc, &color, rl.SHADER_UNIFORM_VEC4);
 }
