@@ -1,11 +1,12 @@
 const std = @import("std");
-const builtin = @import("builtin");
 const rl = @cImport({
     @cInclude("raylib.h");
     @cInclude("raymath.h");
 });
 const light = @import("light.zig");
+
 const GLSL_VERSION = blk: {
+    const builtin = @import("builtin");
     if (builtin.os.tag == .linux or builtin.os.tag == .windows or builtin.os.tag == .macos) {
         break :blk 330; // Desktop platforms
     } else {
