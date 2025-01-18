@@ -3,13 +3,12 @@ const rl = @cImport({
     @cInclude("raylib.h");
     @cInclude("raymath.h");
 });
+
 const Vector3 = rl.Vector3;
 const Color = rl.Color;
 const Shader = rl.Shader;
 const allocator = std.heap.page_allocator;
-
-// Constants
-pub const MAX_LIGHTS = 4;
+var lightsCount: i32 = 0;
 
 // Light types
 pub const LightType = enum(i32) {
@@ -35,9 +34,6 @@ pub const Light = struct {
     attenuationLoc: i32 = 0,
 };
 
-// Global variable to track the number of lights
-var lightsCount: i32 = 0;
-
 // Create a light and get shader locations
 pub fn createLight(
     lightType: LightType,
@@ -45,11 +41,7 @@ pub fn createLight(
     target: Vector3,
     color: Color,
     shader: *Shader,
-) Light {
-    if (lightsCount >= MAX_LIGHTS) {
-        @panic("Maximum number of lights reached");
-    }
-
+) !Light {
     var light = Light{
         .type = lightType,
         .enabled = true,
@@ -57,30 +49,29 @@ pub fn createLight(
         .target = target,
         .color = color,
     };
-
     const lightIndex = lightsCount;
     lightsCount += 1;
-    var location = std.fmt.allocPrint(allocator, "{s}[{d}].{s}", .{ "lights", lightIndex, "enabled" }) catch unreachable;
+    var location = try std.fmt.allocPrint(allocator, "{s}[{d}].{s}", .{ "lights", lightIndex, "enabled" });
     light.enabledLoc = rl.GetShaderLocation(
         shader.*,
         location.ptr,
     );
-    location = std.fmt.allocPrint(allocator, "{s}[{d}].{s}", .{ "lights", lightIndex, "type" }) catch unreachable;
+    location = try std.fmt.allocPrint(allocator, "{s}[{d}].{s}", .{ "lights", lightIndex, "type" });
     light.typeLoc = rl.GetShaderLocation(
         shader.*,
         location.ptr,
     );
-    location = std.fmt.allocPrint(allocator, "{s}[{d}].{s}", .{ "lights", lightIndex, "position" }) catch unreachable;
+    location = try std.fmt.allocPrint(allocator, "{s}[{d}].{s}", .{ "lights", lightIndex, "position" });
     light.positionLoc = rl.GetShaderLocation(
         shader.*,
         location.ptr,
     );
-    location = std.fmt.allocPrint(allocator, "{s}[{d}].{s}", .{ "lights", lightIndex, "target" }) catch unreachable;
+    location = try std.fmt.allocPrint(allocator, "{s}[{d}].{s}", .{ "lights", lightIndex, "target" });
     light.targetLoc = rl.GetShaderLocation(
         shader.*,
         location.ptr,
     );
-    location = std.fmt.allocPrint(allocator, "{s}[{d}].{s}", .{ "lights", lightIndex, "color" }) catch unreachable;
+    location = try std.fmt.allocPrint(allocator, "{s}[{d}].{s}", .{ "lights", lightIndex, "color" });
     light.colorLoc = rl.GetShaderLocation(
         shader.*,
         location.ptr,

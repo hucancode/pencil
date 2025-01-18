@@ -16,9 +16,9 @@ const GLSL_VERSION = blk: {
 const MAX_LIGHTS = 4;
 const SCREEN_WIDTH = 1024;
 const SCREEN_HEIGHT = 768;
-const CAMERA_POSITION = rl.Vector3{ .x = 2.0, .y = 4.0, .z = 6.0 };
-const CAMERA_TARGET = rl.Vector3{ .x = 0.0, .y = 0.5, .z = 0.0 };
-const CAMERA_UP = rl.Vector3{ .x = 0.0, .y = 1.0, .z = 0.0 };
+const CAMERA_POSITION = rl.Vector3{ .x = 2, .y = 4, .z = 6 };
+const CAMERA_TARGET = rl.Vector3{ .x = 0, .y = 0.5, .z = 0 };
+const CAMERA_UP = rl.Vector3{ .x = 0, .y = 1, .z = 0 };
 const CAMERA_FOVY = 45.0;
 const allocator = std.heap.page_allocator;
 
@@ -36,7 +36,7 @@ fn vec3(x: f32, y: f32, z: f32) rl.Vector3 {
     return .{ .x = x, .y = y, .z = z };
 }
 
-const VEC3_ZERO = rl.Vector3{ .x = 0.0, .y = 0.0, .z = 0.0 };
+const VEC3_ZERO = rl.Vector3{ .x = 0, .y = 0, .z = 0 };
 
 fn setupWorld() void {
     camera.position = CAMERA_POSITION;
@@ -45,8 +45,8 @@ fn setupWorld() void {
     camera.fovy = CAMERA_FOVY;
     camera.projection = rl.CAMERA_PERSPECTIVE;
 
-    model = rl.LoadModelFromMesh(rl.GenMeshPlane(10.0, 10.0, 3, 3));
-    cube = rl.LoadModelFromMesh(rl.GenMeshCube(2.0, 4.0, 2.0));
+    model = rl.LoadModelFromMesh(rl.GenMeshPlane(10, 10, 3, 3));
+    cube = rl.LoadModelFromMesh(rl.GenMeshCube(2, 4, 2));
 }
 
 fn setupLightPass() !void {
@@ -62,10 +62,10 @@ fn setupLightPass() !void {
     const ambient: [4]f32 = .{ 0.1, 0.1, 0.1, 1.0 };
     rl.SetShaderValue(lightShader, rl.GetShaderLocation(lightShader, "ambient"), &ambient, rl.SHADER_UNIFORM_VEC4);
 
-    lights[0] = light.createLight(light.LightType.Point, vec3(-2, 1, -2), VEC3_ZERO, rl.YELLOW, &lightShader);
-    lights[1] = light.createLight(light.LightType.Point, vec3(2, 1, 2), VEC3_ZERO, rl.RED, &lightShader);
-    lights[2] = light.createLight(light.LightType.Point, vec3(-2, 1, 2), VEC3_ZERO, rl.GREEN, &lightShader);
-    lights[3] = light.createLight(light.LightType.Point, vec3(2, 1, -2), VEC3_ZERO, rl.BLUE, &lightShader);
+    lights[0] = try light.createLight(light.LightType.Point, vec3(-2, 1, -2), VEC3_ZERO, rl.YELLOW, &lightShader);
+    lights[1] = try light.createLight(light.LightType.Point, vec3(2, 1, 2), VEC3_ZERO, rl.RED, &lightShader);
+    lights[2] = try light.createLight(light.LightType.Point, vec3(-2, 1, 2), VEC3_ZERO, rl.GREEN, &lightShader);
+    lights[3] = try light.createLight(light.LightType.Point, vec3(2, 1, -2), VEC3_ZERO, rl.BLUE, &lightShader);
 }
 
 fn setupNormalPass() !void {
@@ -97,8 +97,8 @@ fn setupSketchPass() !void {
 fn drawScene() void {
     rl.ClearBackground(rl.RAYWHITE);
     rl.BeginMode3D(camera);
-    rl.DrawModel(model, VEC3_ZERO, 1.0, rl.WHITE);
-    rl.DrawModel(cube, VEC3_ZERO, 1.0, rl.WHITE);
+    rl.DrawModel(model, VEC3_ZERO, 1, rl.WHITE);
+    rl.DrawModel(cube, VEC3_ZERO, 1, rl.WHITE);
 
     for (lights) |l| {
         if (l.enabled) {
@@ -108,7 +108,7 @@ fn drawScene() void {
         }
     }
 
-    rl.DrawGrid(10, 1.0);
+    rl.DrawGrid(10, 1);
     rl.EndMode3D();
 }
 
