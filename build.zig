@@ -21,14 +21,6 @@ pub fn build(b: *std.Build) void {
         exe.linkSystemLibrary("kernel32");
     }
 
-    const install = b.getInstallStep();
-    const install_data = b.addInstallDirectory(.{
-        .source_dir = b.path("src/resources"),
-        .install_dir = .{ .prefix = {} },
-        .install_subdir = "resources",
-    });
-    install.dependOn(&install_data.step);
-
     b.installArtifact(exe);
     const run_exe = b.addRunArtifact(exe);
     const run_step = b.step("run", "Run the application");

@@ -154,7 +154,6 @@ fn update() void {
 }
 
 fn draw() void {
-    std.debug.print("Drawing\n", .{});
     raylib.BeginTextureMode(normalRenderTarget);
     drawNormal();
     raylib.EndTextureMode();
@@ -167,7 +166,6 @@ fn draw() void {
     raylib.DrawFPS(10, 10);
     raylib.DrawText("Use keys [Y][R][G][B] to toggle lights", 10, 40, 20, raylib.DARKGRAY);
     raylib.EndDrawing();
-    std.debug.print("Done Drawing\n", .{});
 }
 
 fn dispose() void {
