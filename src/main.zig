@@ -25,7 +25,6 @@ const allocator = std.heap.page_allocator;
 var camera: rl.Camera3D = undefined;
 var lights: [MAX_LIGHTS]light.Light = undefined;
 var model: rl.Model = undefined;
-var cube: rl.Model = undefined;
 var lightShader: rl.Shader = undefined;
 var normalShader: rl.Shader = undefined;
 var sketchShader: rl.Shader = undefined;
@@ -45,8 +44,7 @@ fn setupWorld() void {
     camera.fovy = CAMERA_FOVY;
     camera.projection = rl.CAMERA_PERSPECTIVE;
 
-    model = rl.LoadModelFromMesh(rl.GenMeshPlane(10, 10, 3, 3));
-    cube = rl.LoadModelFromMesh(rl.GenMeshCube(2, 4, 2));
+    model = rl.LoadModel("resources/models/suzanne.obj");
 }
 
 fn setupLightPass() !void {
@@ -98,7 +96,6 @@ fn drawScene() void {
     rl.ClearBackground(rl.RAYWHITE);
     rl.BeginMode3D(camera);
     rl.DrawModel(model, VEC3_ZERO, 1, rl.WHITE);
-    rl.DrawModel(cube, VEC3_ZERO, 1, rl.WHITE);
 
     for (lights) |l| {
         if (l.enabled) {
@@ -108,14 +105,13 @@ fn drawScene() void {
         }
     }
 
-    rl.DrawGrid(10, 1);
+    //rl.DrawGrid(10, 1);
     rl.EndMode3D();
 }
 
 fn drawNormal() void {
     rl.SetShaderValue(normalShader, normalShader.locs[rl.SHADER_LOC_VECTOR_VIEW], &camera.position, rl.SHADER_UNIFORM_VEC3);
     model.materials[0].shader = normalShader;
-    cube.materials[0].shader = normalShader;
     drawScene();
 }
 
@@ -125,7 +121,6 @@ fn drawMainLight() void {
         light.updateLightValues(&lightShader, l);
     }
     model.materials[0].shader = lightShader;
-    cube.materials[0].shader = lightShader;
     drawScene();
 }
 
@@ -146,7 +141,7 @@ fn drawSketch() void {
 
 fn setup() !void {
     rl.SetConfigFlags(rl.FLAG_MSAA_4X_HINT);
-    rl.InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Zig + rl - Sketch Shader");
+    rl.InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Sketch Shader");
     rl.SetTargetFPS(60);
 
     setupWorld();
@@ -181,7 +176,6 @@ fn draw() void {
 
 fn dispose() void {
     rl.UnloadModel(model);
-    rl.UnloadModel(cube);
     rl.UnloadShader(lightShader);
     rl.UnloadShader(normalShader);
     rl.UnloadShader(sketchShader);

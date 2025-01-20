@@ -7,6 +7,7 @@ in vec2 fragTexCoord;
 // Input uniform values
 uniform sampler2D lighting;
 uniform sampler2D normal;
+uniform sampler2D depth;
 
 // Output fragment color
 out vec4 finalColor;
