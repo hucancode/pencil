@@ -7,11 +7,7 @@ pub fn build(b: *std.Build) void {
         .root_source_file = b.path("src/main.zig"),
         .target = b.host,
     });
-    const raylib = b.dependency("raylib", .{
-        .target = b.host,
-        .optimize = b.standardOptimizeOption(.{}),
-        .net = true,
-    });
+    const raylib = b.dependency("raylib", .{});
     exe.linkLibrary(raylib.artifact("raylib"));
 
     if (builtin.target.os.tag == .linux or builtin.target.os.tag == .macos) {
