@@ -1,0 +1,5 @@
+[submodule "deps/raylib"]
+	path = deps/raylib
+	url = https://github.com/raysan5/raylib
+	branch = master
+	shallow = true
